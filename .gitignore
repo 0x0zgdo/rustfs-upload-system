@@ -8,3 +8,5 @@ client/build/
 server/node_modules/
 server/dist/
 web/
+RustFS_API.postman_collection.json
+*.postman_collection.json
