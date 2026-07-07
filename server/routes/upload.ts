@@ -1,8 +1,8 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const db = require('../config/db');
-const { generateUploadUrl } = require('../config/s3');
-const { addThumbnailJob } = require('../config/queue');
+import db from '../config/db';
+import {  generateUploadUrl  } from '../config/s3';
+import {  addThumbnailJob  } from '../config/queue';
 
 // POST /api/upload-url
 router.post('/upload-url', async (req, res, next) => {
@@ -50,4 +50,4 @@ router.post('/metadata', async (req, res, next) => {
   }
 });
 
-module.exports = router;
+export default router;

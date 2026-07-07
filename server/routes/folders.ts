@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const db = require('../config/db');
+import db from '../config/db';
 
 // POST /api/folders
 router.post('/', async (req, res, next) => {
@@ -75,4 +75,4 @@ router.put('/:id/star', async (req, res, next) => {
   }
 });
 
-module.exports = router;
+export default router;

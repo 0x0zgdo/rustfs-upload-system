@@ -1,9 +1,10 @@
-const { Worker } = require('bullmq');
-const sharp = require('sharp');
-const db = require('./config/db');
-const { downloadBuffer, uploadBuffer } = require('./config/s3');
-const { redisOptions } = require('./config/queue');
-require('dotenv').config();
+import {  Worker  } from 'bullmq';
+import sharp from 'sharp';
+import db from './config/db';
+import {  downloadBuffer, uploadBuffer  } from './config/s3';
+import {  redisOptions  } from './config/queue';
+import dotenv from 'dotenv';
+dotenv.config();
 
 console.log('Worker is starting and listening for jobs...');
 

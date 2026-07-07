@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const db = require('../config/db');
-const { generateDownloadUrl } = require('../config/s3');
+import db from '../config/db';
+import {  generateDownloadUrl  } from '../config/s3';
 
 // GET /api/download-url/:id
 router.get('/download-url/:id', async (req, res, next) => {
@@ -41,4 +41,4 @@ router.get('/preview-url/:id', async (req, res, next) => {
   }
 });
 
-module.exports = router;
+export default router;

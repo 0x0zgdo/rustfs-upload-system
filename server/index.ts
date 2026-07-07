@@ -1,19 +1,20 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+dotenv.config();
 
-const { ensureBucket } = require('./config/s3');
-const { connectRedis } = require('./config/redis');
+import {  ensureBucket  } from './config/s3';
+import {  connectRedis  } from './config/redis';
 
-const errorHandler = require('./middlewares/errorHandler');
+import errorHandler from './middlewares/errorHandler';
 
-const filesRouter = require('./routes/files');
-const foldersRouter = require('./routes/folders');
-const uploadRouter = require('./routes/upload');
-const downloadRouter = require('./routes/download');
-const trashRouter = require('./routes/trash');
-const contentRouter = require('./routes/content');
-const starredRouter = require('./routes/starred');
+import filesRouter from './routes/files';
+import foldersRouter from './routes/folders';
+import uploadRouter from './routes/upload';
+import downloadRouter from './routes/download';
+import trashRouter from './routes/trash';
+import contentRouter from './routes/content';
+import starredRouter from './routes/starred';
 
 const app = express();
 app.use(cors());

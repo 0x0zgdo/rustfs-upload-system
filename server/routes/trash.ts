@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const db = require('../config/db');
-const { deleteObject } = require('../config/s3');
+import db from '../config/db';
+import {  deleteObject  } from '../config/s3';
 
 // GET /api/trash
 router.get('/', async (req, res, next) => {
@@ -61,4 +61,4 @@ router.delete('/:type/:id', async (req, res, next) => {
   }
 });
 
-module.exports = router;
+export default router;

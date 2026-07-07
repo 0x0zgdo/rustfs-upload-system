@@ -1,4 +1,4 @@
-const fs = require('fs');
+import fs from 'fs';
 
 async function test() {
   // Create a 1x1 png file

@@ -102,6 +102,7 @@ export default function Sidebar({ activeCategory, setActiveCategory, storageUsed
       </div>
       
       <input type="file" multiple ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileChange} />
+      {/* @ts-expect-error webkitdirectory is non-standard but needed for folder upload */}
       <input type="file" webkitdirectory="" directory="" ref={folderInputRef} style={{ display: 'none' }} onChange={handleFileChange} />
 
       <nav className="sidebar-nav">

@@ -1,6 +1,7 @@
-const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
-const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-require('dotenv').config();
+import {  S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand  } from '@aws-sdk/client-s3';
+import {  getSignedUrl  } from '@aws-sdk/s3-request-presigner';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const s3Client = new S3Client({
   endpoint: process.env.RUSTFS_ENDPOINT,
@@ -16,7 +17,7 @@ const BUCKET_NAME = 'uploads';
 
 // Utility to create bucket if it doesn't exist
 async function ensureBucket() {
-  const { CreateBucketCommand, HeadBucketCommand } = require('@aws-sdk/client-s3');
+  import {  CreateBucketCommand, HeadBucketCommand  } from '@aws-sdk/client-s3';
   try {
     await s3Client.send(new HeadBucketCommand({ Bucket: BUCKET_NAME }));
   } catch (error) {
@@ -81,7 +82,7 @@ async function deleteObject(key) {
   return s3Client.send(command);
 }
 
-module.exports = {
+export {
   s3Client,
   ensureBucket,
   generateUploadUrl,

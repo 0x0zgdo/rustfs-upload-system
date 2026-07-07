@@ -49,7 +49,7 @@ export default function Home() {
 
         updateTransferProgress(transferId, 5);
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
           const xhr = new XMLHttpRequest();
           xhr.open('PUT', url);
           xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');

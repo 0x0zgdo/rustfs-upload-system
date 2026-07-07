@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-const TransferContext = createContext();
+const TransferContext = createContext<any>(null);
 
 export function TransferProvider({ children }) {
   const [transfers, setTransfers] = useState([]);

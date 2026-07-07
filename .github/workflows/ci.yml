@@ -42,3 +42,4 @@ jobs:
       - run: npm ci
       - name: Run SCA check (Audit)
         run: npm audit --audit-level=high
+      - run: npm run build
