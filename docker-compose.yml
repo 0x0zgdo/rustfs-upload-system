@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # Placeholder for RustFS using MinIO since it's S3-compatible
+  rustfs:
+    image: minio/minio:latest
+    container_name: rustfs_placeholder
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=rustfsadmin
+      - MINIO_ROOT_PASSWORD=rustfsadmin
+      - RUSTFS_NOTIFY_ENABLE=true
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./data/rustfs:/data
+    restart: unless-stopped
+    # The guide specifies running as 10001:10001. 
+    user: "10001:10001"
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: metadata_db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=rustfs_metadata
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: message_queue
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    restart: unless-stopped
