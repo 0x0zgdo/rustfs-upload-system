@@ -12,14 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: web
+        working-directory: client
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: client/package-lock.json
       - run: npm ci
       - name: Run SCA check (Audit)
         run: npm audit --audit-level=high
@@ -31,14 +31,14 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: api
+        working-directory: server
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
-          cache-dependency-path: api/package-lock.json
+          cache-dependency-path: server/package-lock.json
       - run: npm ci
       - name: Run SCA check (Audit)
         run: npm audit --audit-level=high
