@@ -1,9 +1,11 @@
 "use client";
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Menu, CloudUpload } from 'lucide-react';
+import { Menu, CloudUpload, Loader2 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import FileGallery from '../components/FileGallery';
 import { useTransfer } from '../components/TransferContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [refreshGallery, setRefreshGallery] = useState(0);
@@ -16,6 +18,14 @@ export default function Home() {
   const dragCounter = useRef(0);
   
   const { addTransfer, updateTransferProgress, updateTransferStatus } = useTransfer();
+  const { user, loading, logout } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
 
   const handleUploadComplete = useCallback(() => {
     // Trigger gallery refresh after a slight delay to allow worker to finish thumbnail
@@ -156,6 +166,14 @@ export default function Home() {
       window.removeEventListener('drop', handleDrop);
     };
   }, [processFiles]);
+
+  if (loading || !user) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-primary)' }}>
+        <Loader2 className="spinner" size={40} color="var(--accent-color)" />
+      </div>
+    );
+  }
 
   return (
     <div className="app-layout">

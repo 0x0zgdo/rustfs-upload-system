@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTransfer } from '../components/TransferContext';
+import { useRouter } from 'next/navigation';
 
 interface UseGalleryDataProps {
   refreshTrigger: any;
@@ -13,6 +14,15 @@ export function useGalleryData({ refreshTrigger, activeCategory, currentFolder, 
   const [folders, setFolders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { addTransfer, updateTransferProgress, updateTransferStatus } = useTransfer();
+  const router = useRouter();
+
+  const handleResponse = async (res: Response) => {
+    if (res.status === 401) {
+      router.push('/login');
+      throw new Error('Unauthorized');
+    }
+    return res.json();
+  };
 
   const fetchContent = async (silent = false) => {
     if (!silent) {
@@ -23,29 +33,29 @@ export function useGalleryData({ refreshTrigger, activeCategory, currentFolder, 
     try {
       if (activeCategory === 'trash') {
         const res = await fetch('/api/trash');
-        const data = await res.json();
+        const data = await handleResponse(res);
         setFolders(data.folders || []);
         setFiles(data.files || []);
       } else if (activeCategory === 'starred') {
         const res = await fetch('/api/starred');
-        const data = await res.json();
+        const data = await handleResponse(res);
         setFolders(data.folders || []);
         setFiles(data.files || []);
       } else if (activeCategory === 'all') {
         const url = currentFolder ? `/api/content?folder_id=${currentFolder.id}` : '/api/content';
         const res = await fetch(url);
-        const data = await res.json();
+        const data = await handleResponse(res);
         setFolders(data.folders || []);
         setFiles(data.files || []);
         
-        fetch('/api/files').then(r=>r.json()).then(d => {
+        fetch('/api/files').then(handleResponse).then(d => {
            const loadedFiles = d.files || [];
            const totalSize = loadedFiles.reduce((sum: number, f: any) => sum + parseInt(f.size || '0', 10), 0);
            if (onStorageUpdate) onStorageUpdate(totalSize);
-        });
+        }).catch(() => {});
       } else {
         const res = await fetch(`/api/files`);
-        const data = await res.json();
+        const data = await handleResponse(res);
         setFiles(data.files || []);
         setFolders([]); 
         
@@ -53,8 +63,10 @@ export function useGalleryData({ refreshTrigger, activeCategory, currentFolder, 
         const totalSize = loadedFiles.reduce((sum: number, f: any) => sum + parseInt(f.size || '0', 10), 0);
         if (onStorageUpdate) onStorageUpdate(totalSize);
       }
-    } catch (err) {
-      console.error('Failed to fetch content', err);
+    } catch (err: any) {
+      if (err.message !== 'Unauthorized') {
+        console.error('Failed to fetch content', err);
+      }
     } finally {
       setLoading(false);
     }

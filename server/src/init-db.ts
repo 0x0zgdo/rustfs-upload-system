@@ -1,9 +1,19 @@
 import db from './config/db';
 
 async function initDb() {
+  const createUsersTable = `
+    CREATE TABLE IF NOT EXISTS users (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      email VARCHAR(255) NOT NULL UNIQUE,
+      password_hash VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
   const createFoldersTable = `
     CREATE TABLE IF NOT EXISTS folders (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       name VARCHAR(255) NOT NULL,
       parent_id UUID REFERENCES folders(id) ON DELETE CASCADE,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -13,6 +23,7 @@ async function initDb() {
   const createFilesTable = `
     CREATE TABLE IF NOT EXISTS files (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       filename VARCHAR(255) NOT NULL,
       s3_key VARCHAR(512) NOT NULL UNIQUE,
       size BIGINT NOT NULL,
@@ -35,11 +46,17 @@ async function initDb() {
   `;
 
   try {
+    await db.query(createUsersTable);
     await db.query(createFoldersTable);
     await db.query(createFilesTable);
     await db.query(alterFilesTable);
     await db.query(addDeletedAtFolders);
     await db.query(addDeletedAtFiles);
+    
+    // Add missing columns if tables already existed
+    await db.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS is_starred BOOLEAN DEFAULT false;`);
+    await db.query(`ALTER TABLE folders ADD COLUMN IF NOT EXISTS is_starred BOOLEAN DEFAULT false;`);
+    
     console.log('Database initialized successfully.');
   } catch (error) {
     console.error('Error initializing database:', error);

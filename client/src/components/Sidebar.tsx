@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutGrid, Image as ImageIcon, Video, FileText, Star, Trash2, X, Plus, FolderPlus, FileUp, FolderUp } from 'lucide-react';
+import { LayoutGrid, Image as ImageIcon, Video, FileText, Star, Trash2, X, Plus, FolderPlus, FileUp, FolderUp, LogOut } from 'lucide-react';
 import { useTransfer } from './TransferContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Files', icon: <LayoutGrid size={18} /> },
@@ -29,6 +30,7 @@ export default function Sidebar({ activeCategory, setActiveCategory, storageUsed
   const folderInputRef = useRef(null);
   const dropdownRef = useRef(null);
   const { addTransfer, updateTransferProgress, updateTransferStatus } = useTransfer();
+  const { user, logout } = useAuth();
 
   const usagePercentage = Math.min((storageUsed / MAX_STORAGE_BYTES) * 100, 100);
 
@@ -136,6 +138,14 @@ export default function Sidebar({ activeCategory, setActiveCategory, storageUsed
           <div className="storage-details">
             {formatBytes(storageUsed)} of {formatBytes(MAX_STORAGE_BYTES)} used
           </div>
+        </div>
+        <div className="user-profile-section">
+          <div className="user-info">
+            <span className="user-email">{user?.email}</span>
+          </div>
+          <button onClick={logout} className="logout-btn" title="Logout">
+            <LogOut size={18} />
+          </button>
         </div>
       </div>
     </aside>

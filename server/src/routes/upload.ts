@@ -1,8 +1,11 @@
 import express from 'express';
 const router = express.Router();
 import db from '../config/db';
-import {  generateUploadUrl  } from '../config/s3';
-import {  addThumbnailJob  } from '../config/queue';
+import { generateUploadUrl } from '../config/s3';
+import { addThumbnailJob } from '../config/queue';
+import { requireAuth } from '../middlewares/requireAuth';
+
+router.use(requireAuth);
 
 // POST /api/upload-url
 router.post('/upload-url', async (req, res, next) => {
@@ -32,9 +35,9 @@ router.post('/metadata', async (req, res, next) => {
     }
 
     const result = await db.query(
-      `INSERT INTO files (filename, s3_key, size, mimetype, folder_id) 
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [filename, key, size, mimetype, folder_id || null]
+      `INSERT INTO files (filename, s3_key, size, mimetype, folder_id, user_id) 
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [filename, key, size, mimetype, folder_id || null, req.session.userId]
     );
 
     const file = result.rows[0];
