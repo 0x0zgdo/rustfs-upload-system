@@ -6,3 +6,5 @@ client/.next/
 client/out/
 client/build/
 server/node_modules/
+server/dist/
+web/

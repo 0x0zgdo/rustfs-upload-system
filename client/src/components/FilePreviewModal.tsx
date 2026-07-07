@@ -1,47 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { X, Download, AlertCircle, Loader2 } from 'lucide-react';
+import { useFilePreview } from '../hooks/useFilePreview';
 
-export default function FilePreviewModal({ file, onClose }) {
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (!file) return;
-    
-    // Fetch the inline presigned URL
-    fetch(`/api/preview-url/${file.id}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.url) {
-          setPreviewUrl(data.url);
-        } else {
-          setError('Failed to load preview URL.');
-        }
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setError('Error connecting to server.');
-        setLoading(false);
-      });
-  }, [file]);
-
-  const handleDownload = () => {
-    // Generate a temporary link to download properly (so we don't just navigate away)
-    fetch(`/api/download-url/${file.id}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.url) {
-          const a = document.createElement('a');
-          a.href = data.url;
-          a.download = file.filename;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        }
-      });
-  };
+export default function FilePreviewModal({ file, onClose }: { file: any, onClose: () => void }) {
+  const { previewUrl, loading, error, handleDownload } = useFilePreview(file);
 
   const renderPreview = () => {
     if (loading) {
@@ -69,6 +31,7 @@ export default function FilePreviewModal({ file, onClose }) {
     const mime = file.mimetype || '';
 
     if (mime.startsWith('image/')) {
+      // eslint-disable-next-line @next/next/no-img-element
       return <img src={previewUrl} alt={file.filename} className="preview-image" />;
     }
     

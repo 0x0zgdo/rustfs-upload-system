@@ -4,156 +4,30 @@ import { LayoutGrid, List, File, Image as ImageIcon, Video, FileText, FileArchiv
 import FilePreviewModal from './FilePreviewModal';
 import MoveFileModal from './MoveFileModal';
 import FileInfoSidebar from './FileInfoSidebar';
-import { useTransfer } from './TransferContext';
+import { useGalleryData } from '../hooks/useGalleryData';export default function FileGallery({ refreshTrigger, activeCategory, onStorageUpdate, currentFolder, setCurrentFolder, isDragging, setIsDragging, onFilesSelected }) {
+  const {
+    files,
+    folders,
+    loading,
+    fetchContent,
+    handleDownload,
+    softDelete,
+    restoreItem,
+    permanentDelete,
+    handleRename,
+    handleToggleStar,
+    emptyTrash
+  } = useGalleryData({ refreshTrigger, activeCategory, currentFolder, onStorageUpdate });
 
-export default function FileGallery({ refreshTrigger, activeCategory, onStorageUpdate, currentFolder, setCurrentFolder, isDragging, setIsDragging, onFilesSelected }) {
-  const [files, setFiles] = useState([]);
-  const [folders, setFolders] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('grid');
   const [dragTargetFolder, setDragTargetFolder] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
   const [moveFile, setMoveFile] = useState(null);
   const [infoFile, setInfoFile] = useState(null);
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const { addTransfer, updateTransferProgress, updateTransferStatus } = useTransfer();
   
   // Track folder navigation path
   const [folderPath, setFolderPath] = useState([]);
-
-  useEffect(() => {
-    fetchContent();
-  }, [refreshTrigger, currentFolder, activeCategory]);
-
-  useEffect(() => {
-    if (infoFile) {
-      document.body.classList.add('info-sidebar-open');
-    } else {
-      document.body.classList.remove('info-sidebar-open');
-    }
-    return () => document.body.classList.remove('info-sidebar-open');
-  }, [infoFile]);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (!e.target.closest('.more-btn') && !e.target.closest('.dropdown-menu')) {
-        setActiveDropdown(null);
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
-
-  const fetchContent = async (silent = false) => {
-    if (!silent) {
-      setLoading(true);
-      setFiles([]);
-      setFolders([]);
-    }
-    try {
-      if (activeCategory === 'trash') {
-        const res = await fetch('/api/trash');
-        const data = await res.json();
-        setFolders(data.folders || []);
-        setFiles(data.files || []);
-      } else if (activeCategory === 'starred') {
-        const res = await fetch('/api/starred');
-        const data = await res.json();
-        setFolders(data.folders || []);
-        setFiles(data.files || []);
-      } else if (activeCategory === 'all') {
-        const url = currentFolder ? `/api/content?folder_id=${currentFolder.id}` : '/api/content';
-        const res = await fetch(url);
-        const data = await res.json();
-        setFolders(data.folders || []);
-        setFiles(data.files || []);
-        
-        fetch('/api/files').then(r=>r.json()).then(d => {
-           const loadedFiles = d.files || [];
-           const totalSize = loadedFiles.reduce((sum, f) => sum + parseInt(f.size || 0, 10), 0);
-           if (onStorageUpdate) onStorageUpdate(totalSize);
-        });
-      } else {
-        const res = await fetch(`/api/files`);
-        const data = await res.json();
-        setFiles(data.files || []);
-        setFolders([]); 
-        
-        const loadedFiles = data.files || [];
-        const totalSize = loadedFiles.reduce((sum, f) => sum + parseInt(f.size || 0, 10), 0);
-        if (onStorageUpdate) onStorageUpdate(totalSize);
-      }
-    } catch (err) {
-      console.error('Failed to fetch content', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDownload = async (e, fileId, filename, mimetype = 'application/octet-stream') => {
-    e.stopPropagation();
-    
-    const transferId = Math.random().toString(36).substring(7) + '-dl-' + filename;
-    const abortController = new AbortController();
-    
-    addTransfer({
-      id: transferId,
-      type: 'download',
-      name: filename,
-      mimetype: mimetype,
-      progress: 0,
-      status: 'in-progress',
-      abortController
-    });
-
-    try {
-      const res = await fetch(`/api/download-url/${fileId}`);
-      const { url } = await res.json();
-      
-      updateTransferProgress(transferId, 5);
-
-      const xhr = new XMLHttpRequest();
-      xhr.open('GET', url);
-      xhr.responseType = 'blob';
-      
-      xhr.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const percent = (event.loaded / event.total) * 90; // up to 95%
-          updateTransferProgress(transferId, 5 + percent);
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          const blobUrl = URL.createObjectURL(xhr.response);
-          const a = document.createElement('a');
-          a.href = blobUrl;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(blobUrl);
-          
-          updateTransferProgress(transferId, 100);
-          updateTransferStatus(transferId, 'completed');
-        } else {
-          updateTransferStatus(transferId, 'error');
-        }
-      };
-
-      xhr.onerror = () => updateTransferStatus(transferId, 'error');
-      xhr.onabort = () => updateTransferStatus(transferId, 'cancelled');
-      
-      abortController.signal.addEventListener('abort', () => xhr.abort());
-      
-      xhr.send();
-
-    } catch (err) {
-      console.error('Download failed', err);
-      updateTransferStatus(transferId, 'error');
-      alert('Download failed');
-    }
-  };
 
   const navigateToFolder = (folder) => {
     if (activeCategory === 'trash') return; // Disable navigation in trash
@@ -174,74 +48,32 @@ export default function FileGallery({ refreshTrigger, activeCategory, onStorageU
     setCurrentFolder(null);
   };
 
-  const softDelete = async (e, id, type) => {
-    e.stopPropagation();
-    if (!confirm(`Move this ${type} to trash?`)) return;
-    await fetch(`/api/${type}s/${id}`, { method: 'DELETE' });
-    fetchContent(true);
-  };
-
-  const restoreItem = async (e, id, type) => {
-    e.stopPropagation();
-    await fetch(`/api/${type}s/${id}/restore`, { method: 'PUT' });
-    fetchContent(true);
-  };
-
-  const permanentDelete = async (e, id, type) => {
-    e.stopPropagation();
-    if (!confirm(`Permanently delete this ${type}? This cannot be undone.`)) return;
-    await fetch(`/api/trash/${type}/${id}`, { method: 'DELETE' });
-    fetchContent(true);
-  };
-
-  const handleRename = async (e, id, type, currentName) => {
-    e.stopPropagation();
-    setActiveDropdown(null);
-    const newName = prompt(`Enter new name for ${type}:`, currentName);
-    if (!newName || newName === currentName) return;
-    
-    try {
-      await fetch(`/api/${type}s/${id}/rename`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName })
-      });
-      fetchContent(true);
-    } catch (err) {
-      alert(`Failed to rename ${type}`);
-    }
-  };
-
-  const handleToggleStar = async (e, id, type, isStarred) => {
-    e.stopPropagation();
-    setActiveDropdown(null);
-    try {
-      await fetch(`/api/${type}s/${id}/star`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_starred: !isStarred })
-      });
-      fetchContent(true);
-    } catch (err) {
-      alert(`Failed to star ${type}`);
-    }
-  };
-
   const handleFileInfo = (e, f) => {
     e.stopPropagation();
     setActiveDropdown(null);
     setInfoFile(f);
   };
 
-  const emptyTrash = async () => {
-    if (!confirm("Are you sure you want to permanently delete all items in the trash? This cannot be undone.")) return;
-    try {
-      await fetch('/api/trash/empty', { method: 'DELETE' });
-      fetchContent(true);
-    } catch (err) {
-      alert('Failed to empty trash');
+  useEffect(() => {
+    if (infoFile) {
+      document.body.classList.add('info-sidebar-open');
+    } else {
+      document.body.classList.remove('info-sidebar-open');
     }
-  };
+    return () => document.body.classList.remove('info-sidebar-open');
+  }, [infoFile]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.more-btn') && !e.target.closest('.dropdown-menu')) {
+        setActiveDropdown(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+
 
   const formatBytes = (bytes, decimals = 2) => {
     if (!+bytes) return '0 Bytes';
@@ -379,8 +211,8 @@ export default function FileGallery({ refreshTrigger, activeCategory, onStorageU
                     </>
                   ) : (
                     <>
-                      <button className="dropdown-item" onClick={(e) => handleToggleStar(e, folder.id, 'folder', folder.is_starred)}><Star size={16} fill={folder.is_starred ? "#facc15" : "none"}/> {folder.is_starred ? 'Unstar' : 'Add to starred'}</button>
-                      <button className="dropdown-item" onClick={(e) => handleRename(e, folder.id, 'folder', folder.name)}><Edit size={16}/> Rename</button>
+                      <button className="dropdown-item" onClick={(e) => { setActiveDropdown(null); handleToggleStar(e, folder.id, 'folder', folder.is_starred); }}><Star size={16} fill={folder.is_starred ? "#facc15" : "none"}/> {folder.is_starred ? 'Unstar' : 'Add to starred'}</button>
+                      <button className="dropdown-item" onClick={(e) => { setActiveDropdown(null); handleRename(e, folder.id, 'folder', folder.name); }}><Edit size={16}/> Rename</button>
                       <button className="dropdown-item danger" onClick={(e) => { setActiveDropdown(null); softDelete(e, folder.id, 'folder'); }}><Trash2 size={16}/> Remove</button>
                     </>
                   )}
@@ -438,8 +270,8 @@ export default function FileGallery({ refreshTrigger, activeCategory, onStorageU
                       <>
                         <button className="dropdown-item" onClick={(e) => { setActiveDropdown(null); handleDownload(e, f.id, f.filename, f.mimetype); }}><Download size={16}/> Download</button>
                         <button className="dropdown-item" onClick={(e) => { e.stopPropagation(); setActiveDropdown(null); setMoveFile(f); }}><CornerDownRight size={16}/> Move to</button>
-                        <button className="dropdown-item" onClick={(e) => handleToggleStar(e, f.id, 'file', f.is_starred)}><Star size={16} fill={f.is_starred ? "#facc15" : "none"}/> {f.is_starred ? 'Unstar' : 'Add to starred'}</button>
-                        <button className="dropdown-item" onClick={(e) => handleRename(e, f.id, 'file', f.filename)}><Edit size={16}/> Rename</button>
+                        <button className="dropdown-item" onClick={(e) => { setActiveDropdown(null); handleToggleStar(e, f.id, 'file', f.is_starred); }}><Star size={16} fill={f.is_starred ? "#facc15" : "none"}/> {f.is_starred ? 'Unstar' : 'Add to starred'}</button>
+                        <button className="dropdown-item" onClick={(e) => { setActiveDropdown(null); handleRename(e, f.id, 'file', f.filename); }}><Edit size={16}/> Rename</button>
                         <button className="dropdown-item" onClick={(e) => handleFileInfo(e, f)}><Info size={16}/> File Information</button>
                         <button className="dropdown-item danger" onClick={(e) => { setActiveDropdown(null); softDelete(e, f.id, 'file'); }}><Trash2 size={16}/> Remove</button>
                       </>
@@ -450,6 +282,7 @@ export default function FileGallery({ refreshTrigger, activeCategory, onStorageU
               
               <div className="file-preview">
                 {thumbnailUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={thumbnailUrl} alt={f.filename} />
                 ) : (
                   <Icon size={48} color={iconColor} style={{ opacity: 0.5 }} />

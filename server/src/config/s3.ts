@@ -1,4 +1,4 @@
-import {  S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand  } from '@aws-sdk/client-s3';
+import {  S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, CreateBucketCommand, HeadBucketCommand  } from '@aws-sdk/client-s3';
 import {  getSignedUrl  } from '@aws-sdk/s3-request-presigner';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -17,7 +17,6 @@ const BUCKET_NAME = 'uploads';
 
 // Utility to create bucket if it doesn't exist
 async function ensureBucket() {
-  import {  CreateBucketCommand, HeadBucketCommand  } from '@aws-sdk/client-s3';
   try {
     await s3Client.send(new HeadBucketCommand({ Bucket: BUCKET_NAME }));
   } catch (error) {
@@ -45,8 +44,8 @@ async function generateUploadUrl(key, mimetype) {
   return getSignedUrl(s3Client, command, { expiresIn: 3600 });
 }
 
-async function generateDownloadUrl(key, filename, inline = false) {
-  const params = {
+async function generateDownloadUrl(key: any, filename?: string, inline = false) {
+  const params: { Bucket: string; Key: any; ResponseContentDisposition?: string } = {
     Bucket: BUCKET_NAME,
     Key: key,
   };
